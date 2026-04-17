@@ -1,3 +1,4 @@
-FROM nginx:alpine
-COPY site/ /usr/share/nginx/html/
-COPY nginx.conf /etc/nginx/templates/default.conf.template
+FROM python:3.12-alpine
+COPY site/ /app/
+WORKDIR /app
+CMD python -m http.server ${PORT:-8080}
