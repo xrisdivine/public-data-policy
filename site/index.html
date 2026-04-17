@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Aggregation Problem — Divine Keetle-Maloney</title>
+<meta name="description" content="Public data was designed for human-scale access. AI changes everything. A policy framework for Anthropic's Societal Impacts Team.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --navy: #0f172a;
+  --navy-mid: #1e293b;
+  --slate: #334155;
+  --slate-light: #64748b;
+  --warm-white: #f8fafc;
+  --off-white: #e2e8f0;
+  --amber: #f59e0b;
+  --amber-dim: #d97706;
+  --blue: #3b82f6;
+  --blue-dim: #2563eb;
+  --red-soft: #ef4444;
+  --green-soft: #22c55e;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Source Sans 3', 'Segoe UI', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--navy);
+  background: var(--warm-white);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ─── Dot grid background ─── */
+.dot-grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(248,250,252,0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+
+/* ─── Scroll reveal ─── */
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+
+/* ─── Navigation ─── */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(248,250,252,0.06);
+  transition: background 0.3s;
+}
+nav .nav-mark {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--warm-white);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+nav .nav-links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+nav .nav-links a {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: rgba(248,250,252,0.55);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+nav .nav-links a:hover { color: var(--amber); }
+
+/* ─── Hero ─── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  background: var(--navy);
+  color: var(--warm-white);
+  overflow: hidden;
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 820px;
+  padding: 8rem 2rem 6rem;
+  margin: 0 auto;
+}
+.hero-eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.hero-eyebrow::before {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 2px;
+  background: var(--amber);
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 5.5vw, 4.2rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.8rem;
+}
+.hero h1 em {
+  font-style: italic;
+  color: var(--amber);
+}
+.hero-subtitle {
+  font-size: 1.2rem;
+  line-height: 1.65;
+  color: rgba(248,250,252,0.7);
+  max-width: 640px;
+  margin-bottom: 2.5rem;
+  font-weight: 300;
+}
+.hero-author {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: rgba(248,250,252,0.45);
+  letter-spacing: 0.02em;
+}
+.hero-author strong {
+  color: var(--warm-white);
+  font-weight: 600;
+}
+
+/* Hero canvas for aggregation visual */
+#hero-canvas {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 55%;
+  height: 100%;
+  opacity: 0.35;
+  z-index: 1;
+}
+
+/* ─── Sections ─── */
+section { position: relative; }
+.section-dark {
+  background: var(--navy);
+  color: var(--warm-white);
+}
+.section-mid {
+  background: var(--navy-mid);
+  color: var(--warm-white);
+}
+.section-light {
+  background: var(--warm-white);
+  color: var(--navy);
+}
+.section-offwhite {
+  background: #f1f5f9;
+  color: var(--navy);
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 6rem 2rem;
+}
+.container-wide {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 6rem 2rem;
+}
+
+/* ─── Section headers ─── */
+.section-label {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.section-label::before {
+  content: '';
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--amber);
+}
+.section-dark .section-label, .section-mid .section-label { color: var(--amber); }
+
+h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.015em;
+  margin-bottom: 1.5rem;
+}
+h3 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 1rem;
+}
+p + p { margin-top: 1.2rem; }
+
+.lead-text {
+  font-size: 1.15rem;
+  line-height: 1.7;
+  color: var(--slate-light);
+  max-width: 640px;
+}
+.section-dark .lead-text { color: rgba(248,250,252,0.6); }
+
+/* ─── Harm cards ─── */
+.harm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+.harm-card {
+  background: rgba(248,250,252,0.04);
+  border: 1px solid rgba(248,250,252,0.08);
+  border-radius: 12px;
+  padding: 2rem;
+  transition: border-color 0.3s, transform 0.3s;
+}
+.harm-card:hover {
+  border-color: rgba(245,158,11,0.3);
+  transform: translateY(-2px);
+}
+.harm-card .harm-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: rgba(245,158,11,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.2rem;
+  font-size: 1.2rem;
+}
+.harm-card h3 {
+  font-size: 1.15rem;
+  margin-bottom: 0.8rem;
+  color: var(--warm-white);
+}
+.harm-card p {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: rgba(248,250,252,0.6);
+}
+
+/* ─── Case studies ─── */
+.case-study {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.case-header {
+  padding: 2.5rem 2.5rem 0;
+}
+.case-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.75rem;
+  border-radius: 100px;
+  margin-bottom: 1rem;
+}
+.case-tag.court { background: rgba(59,130,246,0.1); color: var(--blue-dim); }
+.case-tag.health { background: rgba(34,197,94,0.1); color: #16a34a; }
+
+.case-header h3 {
+  font-size: 1.6rem;
+  margin-bottom: 0.6rem;
+}
+.case-header .case-desc {
+  font-size: 1rem;
+  color: var(--slate-light);
+  margin-bottom: 1.5rem;
+}
+
+.case-body { padding: 0 2.5rem 2.5rem; }
+
+.case-preview {
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.preview-live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulse-dot 2s ease infinite;
+}
+.preview-visit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--blue);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+.preview-visit:hover { color: var(--amber); }
+
+.case-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+.case-benign, .case-dark {
+  padding: 1.5rem;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+.case-benign {
+  background: #f0fdf4;
+  border-left: 3px solid var(--green-soft);
+}
+.case-benign .split-label { color: #16a34a; }
+.case-dark {
+  background: #fef2f2;
+  border-left: 3px solid var(--red-soft);
+}
+.case-dark .split-label { color: var(--red-soft); }
+.split-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 0.6rem;
+}
+
+.case-insight {
+  margin-top: 2rem;
+  padding: 1.5rem 2rem;
+  background: #fffbeb;
+  border-left: 3px solid var(--amber);
+  border-radius: 0 10px 10px 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--slate);
+}
+
+/* ─── Policy solutions ─── */
+.policy-item {
+  padding: 2.5rem 0;
+  border-bottom: 1px solid rgba(248,250,252,0.08);
+}
+.policy-item:last-child { border-bottom: none; }
+.policy-number {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--amber);
+  margin-bottom: 0.8rem;
+}
+.policy-item h3 {
+  color: var(--warm-white);
+  font-size: 1.35rem;
+  margin-bottom: 0.8rem;
+}
+.policy-item p {
+  color: rgba(248,250,252,0.6);
+  font-size: 1rem;
+  max-width: 680px;
+}
+
+/* ─── Action plan ─── */
+.action-grid {
+  display: grid;
+  gap: 0;
+  margin-top: 3rem;
+  counter-reset: action-counter;
+}
+.action-item {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 0;
+  padding: 2.5rem 0;
+  border-bottom: 1px solid #e2e8f0;
+  counter-increment: action-counter;
+}
+.action-item:last-child { border-bottom: none; }
+.action-number {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: var(--amber);
+  line-height: 1;
+  padding-top: 0.15rem;
+}
+.action-number::before { content: counter(action-counter); }
+.action-content h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.7rem;
+}
+.action-content p {
+  font-size: 0.98rem;
+  color: var(--slate-light);
+  max-width: 600px;
+}
+
+/* ─── Urgency bar ─── */
+.urgency-banner {
+  background: var(--navy);
+  color: var(--warm-white);
+  text-align: center;
+  padding: 3.5rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.urgency-banner .dot-grid { opacity: 0.5; }
+.urgency-banner p {
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+  font-weight: 400;
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.5;
+  position: relative;
+  z-index: 2;
+}
+.urgency-banner em {
+  color: var(--amber);
+  font-style: italic;
+}
+
+/* ─── Counters ─── */
+.stat-row {
+  display: flex;
+  gap: 3rem;
+  margin-top: 2.5rem;
+  flex-wrap: wrap;
+}
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+.stat-number {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: var(--amber);
+  line-height: 1.1;
+}
+.stat-label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: rgba(248,250,252,0.45);
+  margin-top: 0.3rem;
+  letter-spacing: 0.02em;
+}
+
+/* ─── Footer ─── */
+footer {
+  background: var(--navy);
+  color: rgba(248,250,252,0.5);
+  text-align: center;
+  padding: 4rem 2rem;
+  border-top: 1px solid rgba(248,250,252,0.06);
+}
+footer .footer-statement {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: var(--warm-white);
+  max-width: 560px;
+  margin: 0 auto 2rem;
+  line-height: 1.6;
+}
+footer .footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+footer .footer-links a {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--blue);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+footer .footer-links a:hover { color: var(--amber); }
+footer .footer-copy {
+  font-size: 0.78rem;
+  color: rgba(248,250,252,0.3);
+}
+
+/* ─── Chemical analogy callout ─── */
+.analogy-box {
+  margin-top: 2rem;
+  padding: 2rem 2.5rem;
+  border-radius: 12px;
+  background: rgba(245,158,11,0.06);
+  border: 1px solid rgba(245,158,11,0.15);
+}
+.analogy-box p {
+  font-size: 0.95rem;
+  color: var(--slate);
+}
+.analogy-box strong { color: var(--navy); }
+
+/* ─── Mobile ─── */
+@media (max-width: 768px) {
+  .hero-content { padding: 7rem 1.5rem 4rem; }
+  #hero-canvas { width: 100%; opacity: 0.15; }
+  .container, .container-wide { padding: 4rem 1.5rem; }
+  .case-split { grid-template-columns: 1fr; }
+  .case-header, .case-body { padding-left: 1.5rem; padding-right: 1.5rem; }
+  .harm-grid { grid-template-columns: 1fr; }
+  .stat-row { gap: 2rem; }
+  .action-item { grid-template-columns: 56px 1fr; }
+  .action-number { font-size: 1.8rem; }
+  nav .nav-links { display: none; }
+  .stat-number { font-size: 2rem; }
+  footer .footer-links { flex-direction: column; align-items: center; gap: 1rem; }
+}
+@media (max-width: 480px) {
+  .hero h1 { font-size: 2rem; }
+  h2 { font-size: 1.7rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav>
+  <div class="nav-mark">The Aggregation Problem</div>
+  <ul class="nav-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#case-studies">Case Studies</a></li>
+    <li><a href="#solutions">Solutions</a></li>
+    <li><a href="#action-plan">Action Plan</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="dot-grid"></div>
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-content">
+    <div class="hero-eyebrow reveal">Policy Framework</div>
+    <h1 class="reveal reveal-delay-1">Public Data Was Designed for <em>Human-Scale</em> Access</h1>
+    <p class="hero-subtitle reveal reveal-delay-2">AI enables superhuman-scale aggregation, correlation, and exploitation&nbsp;&mdash; and the legal and policy frameworks haven't caught up.</p>
+    <p class="hero-author reveal reveal-delay-3"><strong>Divine Keetle-Maloney</strong> &mdash; A framework for Anthropic's Societal Impacts Team</p>
+  </div>
+</section>
+
+<!-- The Problem -->
+<section id="problem" class="section-dark">
+  <div class="dot-grid"></div>
+  <div class="container-wide">
+    <div class="section-label reveal">The Problem</div>
+    <h2 class="reveal">The Friction That Protected Us Is Gone</h2>
+    <p class="lead-text reveal">Government data is public by design&nbsp;&mdash; transparency, accountability, and civic participation depend on it. Court dockets, contract postings, licensing records, property filings. The default assumption has always been: public means accessible, and accessible is good.</p>
+    <p class="lead-text reveal" style="margin-top: 1.2rem;">But there's a gap between <strong style="color: var(--warm-white)">technically public</strong> and <strong style="color: var(--warm-white)">practically accessible</strong>. Historically, friction was the protection. You <em>could</em> go to the courthouse and look up every filing, but nobody was going to do that for millions of records. AI agents collapse that friction to zero.</p>
+
+    <div class="stat-row reveal">
+      <div class="stat-item">
+        <div class="stat-number" data-target="800" data-suffix="M+">0</div>
+        <div class="stat-label">Public records digitized federally</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" data-target="50" data-suffix="">0</div>
+        <div class="stat-label">State court systems online</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" data-target="0" data-suffix="" data-fixed="0" style="color: var(--red-soft);">0</div>
+        <div class="stat-label">Federal anti-aggregation laws</div>
+      </div>
+    </div>
+
+    <div class="harm-grid">
+      <div class="harm-card reveal">
+        <div class="harm-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="2"/><circle cx="20" cy="6" r="2"/><circle cx="4" cy="18" r="2"/><circle cx="20" cy="18" r="2"/><line x1="6" y1="7" x2="10" y2="10"/><line x1="18" y1="7" x2="14" y2="10"/><line x1="6" y1="17" x2="10" y2="14"/><line x1="18" y1="17" x2="14" y2="14"/></svg>
+        </div>
+        <h3>Aggregation Risk</h3>
+        <p>Individual records are innocuous. Combined across sources, they become surveillance. A court filing + a property record + a contract posting = a detailed profile nobody consented to.</p>
+      </div>
+      <div class="harm-card reveal reveal-delay-1">
+        <div class="harm-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+        </div>
+        <h3>Speed Asymmetry</h3>
+        <p>Bad actors with AI pipelines act on public data faster than the people <em>in</em> that data can react. Predatory lenders targeting eviction filings the moment they hit the docket.</p>
+      </div>
+      <div class="harm-card reveal reveal-delay-2">
+        <div class="harm-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </div>
+        <h3>Scale Asymmetry</h3>
+        <p>What was previously a targeted lookup becomes bulk harvesting. The intent shifts from "I need this specific record" to "I want every record matching this vulnerability pattern."</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Urgency -->
+<div class="urgency-banner">
+  <div class="dot-grid"></div>
+  <p class="reveal"><em>The technology to exploit this gap exists today.</em> I know&nbsp;&mdash; because I built it. Not to cause harm, but the capabilities are identical to what a bad actor would build.</p>
+</div>
+
+<!-- Case Studies -->
+<section id="case-studies" class="section-light">
+  <div class="container-wide">
+    <div class="section-label reveal">Case Studies</div>
+    <h2 class="reveal">I Built These. Here's What Could Go Wrong.</h2>
+    <p class="lead-text reveal" style="color: var(--slate-light); margin-bottom: 3rem;">Two real products I built that demonstrate how AI agents interact with public government data&nbsp;&mdash; and the thin line between utility and exploitation.</p>
+
+    <!-- DocketCast -->
+    <div class="case-study reveal">
+      <div class="case-header">
+        <span class="case-tag court">Federal Court Data</span>
+        <h3>DocketCast</h3>
+        <p class="case-desc">Claude-powered litigation intelligence. Monitors new federal court filings daily via CourtListener, scores and summarizes cases using AI, and delivers personalized weekly digests to litigation support vendors.</p>
+      </div>
+      <div class="case-body">
+        <div class="case-preview">
+          <a href="https://www.docketcast.com" target="_blank" rel="noopener" class="preview-visit"><span class="preview-live-dot"></span>www.docketcast.com &rarr;</a>
+        </div>
+        <div class="case-split">
+          <div class="case-benign">
+            <div class="split-label">The benign use</div>
+            <p>Helping expert witness firms and litigation support vendors find relevant, high-value cases efficiently. Saves hours of manual docket review every week.</p>
+          </div>
+          <div class="case-dark">
+            <div class="split-label">The dark pattern</div>
+            <p>The same pipeline could profile litigants at scale. Combine eviction filings with medical debt cases and bankruptcy records to build vulnerability profiles. Front-run legal outcomes. Target people in active litigation with predatory services. Monitor specific individuals across every federal court in the country.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Travel Nurse Drop -->
+    <div class="case-study reveal">
+      <div class="case-header">
+        <span class="case-tag health">Healthcare Staffing Data</span>
+        <h3>Travel Nurse Drop</h3>
+        <p class="case-desc">Aggregates travel nursing contracts from 5 staffing agency websites, calculates net take-home pay with state-specific tax models, scores contracts, and delivers email alerts to subscribers.</p>
+      </div>
+      <div class="case-body">
+        <div class="case-preview">
+          <a href="https://www.travelnursedrop.com" target="_blank" rel="noopener" class="preview-visit"><span class="preview-live-dot"></span>www.travelnursedrop.com &rarr;</a>
+        </div>
+        <div class="case-split">
+          <div class="case-benign">
+            <div class="split-label">The benign use</div>
+            <p>Helping nurses find better-paying contracts with transparent compensation data. Levels an information asymmetry that agencies exploit.</p>
+          </div>
+          <div class="case-dark">
+            <div class="split-label">The dark pattern</div>
+            <p>The same scraping infrastructure maps real-time staffing shortages at specific hospitals. An adversary could identify which facilities are critically understaffed, when, and in what specialties&nbsp;&mdash; exploiting that for stock trading on healthcare companies or targeting vulnerable infrastructure.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="case-insight reveal">
+      "I didn't build these to cause harm. But the capabilities are identical to what a bad actor would build. The only difference is intent&nbsp;&mdash; and <strong>intent doesn't scale as a protection.</strong>"
+    </div>
+  </div>
+</section>
+
+<!-- Policy Solutions -->
+<section id="solutions" class="section-dark">
+  <div class="dot-grid"></div>
+  <div class="container">
+    <div class="section-label reveal">Policy Solutions</div>
+    <h2 class="reveal">What Government Can Do Now</h2>
+    <p class="lead-text reveal">These aren't hypothetical. Each is technically feasible, has precedent, and preserves the transparency that makes public data valuable in the first place.</p>
+
+    <div class="policy-item reveal">
+      <div class="policy-number">01</div>
+      <h3>Query-Shaped Access, Not Download-Shaped Access</h3>
+      <p>Redesign government data portals so the default interaction is asking questions, not downloading tables. Most legitimate uses are targeted: "show me this case," "what contracts posted this week." Exploitative uses are broad: "give me every eviction filing in this zip code for 5 years." Structure APIs to serve the first pattern freely and require justification for the second. This isn't access restriction&nbsp;&mdash; it's design that reflects actual use cases.</p>
+    </div>
+
+    <div class="policy-item reveal">
+      <div class="policy-number">02</div>
+      <h3>Differential Privacy for Aggregate Datasets</h3>
+      <p>When bulk data must be published&nbsp;&mdash; spending reports, contract volumes, licensing stats&nbsp;&mdash; apply noise calibrated to individual sensitivity. The macro signal survives. The ability to re-identify or correlate individual records degrades. The Census Bureau proved this works at national scale. It's massively underdeployed everywhere else.</p>
+    </div>
+
+    <div class="policy-item reveal">
+      <div class="policy-number">03</div>
+      <h3>Purpose-Based Use Restrictions</h3>
+      <p>Public data is currently governed by <em>access</em> law&nbsp;&mdash; FOIA, state sunshine laws. We need a complementary layer of <em>use</em> law. Access: still open. Use for individual lookup, journalism, research: permitted. Use for bulk profiling, predatory targeting, commercial resale without consent: prohibited. The EU's GDPR already partially does this. The US has no equivalent.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Action Plan -->
+<section id="action-plan" class="section-offwhite">
+  <div class="container">
+    <div class="section-label reveal">What I'd Build at Anthropic</div>
+    <h2 class="reveal">A Concrete Action Plan</h2>
+    <p class="lead-text reveal" style="color: var(--slate-light); margin-bottom: 1rem;">Five initiatives that Anthropic's Societal Impacts team is uniquely positioned to lead&nbsp;&mdash; combining technical capability, policy credibility, and the responsibility that comes from building the most capable AI systems in the world.</p>
+
+    <div class="action-grid">
+      <div class="action-item reveal">
+        <div class="action-number"></div>
+        <div class="action-content">
+          <h3>The Threat Library</h3>
+          <p>Systematically red-team the top 20 most-accessed federal and state data sources&nbsp;&mdash; court dockets, property records, licensing databases, contract postings, campaign finance, business filings. For each one, document: "What's the most harmful pipeline an agent could build with this?" You can't mitigate what you haven't mapped.</p>
+        </div>
+      </div>
+      <div class="action-item reveal">
+        <div class="action-number"></div>
+        <div class="action-content">
+          <h3>The Anti-Aggregation Framework</h3>
+          <p>The big policy contribution. Current law treats each dataset independently. The harm lives in the joins. Propose a legal standard that recognizes cross-source aggregation of public records as a distinct category requiring regulation. Not restricting access to any single source&nbsp;&mdash; creating liability when someone combines N sources to build profiles on individuals without consent.</p>
+          <div class="analogy-box">
+            <p><strong>The chemical precursor analogy:</strong> You can buy acetone. You can buy hydrogen peroxide. Each is legal. But combining them in certain quantities triggers regulation&nbsp;&mdash; not because any single ingredient is dangerous, but because the combination is. Public data aggregation needs the same principle.</p>
+          </div>
+        </div>
+      </div>
+      <div class="action-item reveal">
+        <div class="action-number"></div>
+        <div class="action-content">
+          <h3>Detection Built Into Claude</h3>
+          <p>Not hard blocks&nbsp;&mdash; pattern detection. If an agent pipeline is scraping multiple government sources, correlating on individual identifiers, and targeting populations that map to vulnerability signals (debt, eviction, medical, criminal)&nbsp;&mdash; flag it for review. Same logic as fraud detection. You're looking for the <em>pattern</em> of exploitative aggregation, not restricting any individual query.</p>
+        </div>
+      </div>
+      <div class="action-item reveal">
+        <div class="action-number"></div>
+        <div class="action-content">
+          <h3>Responsible Scaling for Public Data</h3>
+          <p>Similar to how Anthropic has ASL levels for catastrophic risk, create a framework specifically for public data exploitation. Define thresholds: at what capability level does an AI agent's ability to aggregate public records become a societal risk? What mitigations trigger at each level? Publish it. Commit to it. Challenge other labs to match it.</p>
+        </div>
+      </div>
+      <div class="action-item reveal">
+        <div class="action-number"></div>
+        <div class="action-content">
+          <h3>Government Partnerships</h3>
+          <p>Help 2&ndash;3 pilot agencies redesign their data access patterns using the query-shaped model. Anthropic builds the threat model, the agency implements the fix, co-publish results. This creates credibility, demonstrates feasibility, and gives legislative staff a working example to point to.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Closing urgency -->
+<div class="urgency-banner">
+  <div class="dot-grid"></div>
+  <p class="reveal">The window to get this right is <em>now</em>&nbsp;&mdash; before the first major public-data exploitation incident forces reactive, poorly designed legislation that overcorrects and kills transparency altogether.</p>
+</div>
+
+<!-- Footer -->
+<footer>
+  <p class="footer-statement">The projects referenced are real. The risks are real. The policy gap is now.</p>
+  <div class="footer-links">
+    <a href="https://www.docketcast.com" target="_blank" rel="noopener">DocketCast &rarr;</a>
+    <a href="https://www.travelnursedrop.com" target="_blank" rel="noopener">Travel Nurse Drop &rarr;</a>
+  </div>
+  <p class="footer-copy">&copy; 2026 Divine Keetle-Maloney</p>
+</footer>
+
+<script>
+// ─── Aggregation visualization (hero canvas) ───
+(function() {
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, nodes = [], edges = [], raf;
+  const NODE_COUNT = 40;
+  const amber = [245, 158, 11];
+  const blue = [59, 130, 246];
+  const white = [248, 250, 252];
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    W = rect.width;
+    H = rect.height;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function init() {
+    resize();
+    nodes = [];
+    for (let i = 0; i < NODE_COUNT; i++) {
+      nodes.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        r: 2 + Math.random() * 3,
+        color: Math.random() > 0.7 ? amber : (Math.random() > 0.5 ? blue : white)
+      });
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // edges
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[i].x - nodes[j].x;
+        const dy = nodes[i].y - nodes[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 140) {
+          const alpha = (1 - dist / 140) * 0.25;
+          ctx.strokeStyle = `rgba(${amber[0]},${amber[1]},${amber[2]},${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // nodes
+    for (const n of nodes) {
+      n.x += n.vx;
+      n.y += n.vy;
+      if (n.x < 0 || n.x > W) n.vx *= -1;
+      if (n.y < 0 || n.y > H) n.vy *= -1;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${n.color[0]},${n.color[1]},${n.color[2]},0.6)`;
+      ctx.fill();
+    }
+
+    raf = requestAnimationFrame(draw);
+  }
+
+  init();
+  draw();
+  window.addEventListener('resize', () => { init(); });
+})();
+
+// ─── Scroll reveal ───
+(function() {
+  const els = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  els.forEach(el => observer.observe(el));
+})();
+
+// ─── Stat counters ───
+(function() {
+  const stats = document.querySelectorAll('.stat-number[data-target]');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const el = e.target;
+      const target = parseInt(el.dataset.target);
+      const suffix = el.dataset.suffix || '';
+      const duration = 1600;
+      const start = performance.now();
+      function tick(now) {
+        const t = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+        const val = Math.round(ease * target);
+        el.textContent = val.toLocaleString() + suffix;
+        if (t < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+      observer.unobserve(el);
+    });
+  }, { threshold: 0.5 });
+  stats.forEach(s => observer.observe(s));
+})();
+
+// ─── Smooth scroll for nav ───
+document.querySelectorAll('nav a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+</body>
+</html>
